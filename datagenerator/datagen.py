@@ -4,12 +4,23 @@ import mingus.extra.lilypond as lp
 from mingus.midi import midi_file_out
 from mingus.core import scales
 
-def main():
+# For installation, do pip install -r requirements.txt for python libraries
+# Before you run this, make folders named: midi_data, sheet_music, soundfonts, wav_data
+# You to need to install a fluidsynth and lilypond via brew (macOS) and if you're on linux, figure it out.
 
+# In the soundfonts folder, install this file: YDP-GrandPiano-20160804.sf2 from https://musescore.org/en/handbook/3/soundfonts-and-sfz-files
+# Scroll to SF2 Pianos and choose 'Acoustic grand piano, release 2016-08-04'
+
+# For the midi_data, should be in the repo.
+
+"""
+This is a test suite, meant to test the functionality of the libraries.
+"""
+def main():
     bar = Bar('C', (4, 4))
     for beat in range(4):
         # duration subdivides the bar already
-        bar.place_notes(['C','E','G'], duration=4)
+        print(bar.place_notes(['C','E'], duration=4))
 
     # generate sheet music as png
     lp.to_png(lp.from_Bar(bar), "./sheet_music/data_1.png")
@@ -39,7 +50,8 @@ def main():
     fs.midi_to_audio('./midi_data/data_2.mid', './wav_data/data_2.wav')
 
     # let's test the .wav generator on a semi-dense Godowsky piece
-    fs.midi_to_audio('./midi_data/godowsky_java_suite_07b_three_dances_2_(c)yogore.mid', './wav_data/godowsky.wav')
+    fs.midi_to_audio('./midi_data/godowsky.mid', './wav_data/godowsky.wav')
+
 
 if __name__ == "__main__":
     main()
