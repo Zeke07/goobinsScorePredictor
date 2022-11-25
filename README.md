@@ -1,4 +1,4 @@
-# goobinsScorePredictor
+# goobinsScorePredictor Proposal!
 Working set for an ML-based music score generator
 
 ## Basic Idea:
