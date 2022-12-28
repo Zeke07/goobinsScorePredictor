@@ -104,13 +104,11 @@ def main():
                 chosen_duration = random.choice(list(note_durations.keys()))
 
                 # choose 1-2 notes for a chord at some interval, with a given probability
-                chord = []
-                num_notes = random.choices([1,2])
+
                 register = random.choice(registers)
-                for n in range(num_notes[0]):
-                    chord.append(Note(random.choice(notes), register) )
 
                 for beat_length in range(note_durations[chosen_duration]):
+                    chord = [Note(random.choice(notes), register) for n in range(random.choices([1,2])[0])]
                     bar.place_notes(chord, chosen_duration)
 
             bars.append(bar)
