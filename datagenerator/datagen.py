@@ -118,7 +118,12 @@ def main():
             curr_track.add_bar(bar)
 
         # this is just for myself to see what is associated with each data point
-        lp.to_pdf(lp.from_Track(curr_track), f'./sheet_music/{file_serial_number}.pdf')
+        lp_string = lp.from_Track(curr_track)
+        lp.to_pdf(lp_string , f'./sheet_music/{file_serial_number}.pdf')
+
+        # write the LilyPond representation to a file
+        with open(f'text_data/{file_serial_number}.txt', "w") as text_file:
+            text_file.write(lp_string)
 
 
         # do some exception-checking later in case the intermediary (midi) file
