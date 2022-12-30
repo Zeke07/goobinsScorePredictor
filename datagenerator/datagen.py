@@ -65,7 +65,7 @@ def test():
 
 # load computer-generated midi, lilypond, pdf, and .wav forms into their respective directories
 def generate_data(DATA_POINTS=5, key_signature='C', time_signature=(4,4), registers=[4,5]):
-
+    abs_path = os.path.dirname(os.path.abspath(__file__))
     # NOTES: We need to generate various attributes of the naive dataset randomly
     # We have the following constraints:
     # Key is always in Cmaj, 2 Bars only, we need to randomly generate the size of the chord
@@ -113,16 +113,16 @@ def generate_data(DATA_POINTS=5, key_signature='C', time_signature=(4,4), regist
 
         # this is just for myself to see what is associated with each data point
         lp_string = lp.from_Track(curr_track)
-        lp.to_pdf(lp_string, f'./sheet_music/{file_serial_number}.pdf')
+        lp.to_pdf(lp_string, f'{abs_path}/sheet_music/{file_serial_number}.pdf')
 
         # write the LilyPond representation to a file
 
-        with open(f'/text_data/{file_serial_number}.txt', "w") as text_file:
+        with open(f'{abs_path}/text_data/{file_serial_number}.txt', "w") as text_file:
             text_file.write(lp_string)
 
         # do some exception-checking later in case the intermediary (midi) file
         # needed to produce the .wav does not exist!
-        midi_file_out.write_Track(f'./midi_data/{file_serial_number}.mid', curr_track, bpm=80)
+        midi_file_out.write_Track(f'{abs_path}/midi_data/{file_serial_number}.mid', curr_track, bpm=80)
 
         sf = './soundfonts/YDP-GrandPiano-20160804.sf2'
 
@@ -130,7 +130,7 @@ def generate_data(DATA_POINTS=5, key_signature='C', time_signature=(4,4), regist
         # the mingus MIDI file
         fs = FluidSynth(sf)
 
-        fs.midi_to_audio(f'./midi_data/{file_serial_number}.mid', f'./wav_data/{file_serial_number}.wav')
+        fs.midi_to_audio(f'{abs_path}/midi_data/{file_serial_number}.mid', f'{abs_path}/wav_data/{file_serial_number}.wav')
 
         file_serial_number += 1
 
@@ -138,18 +138,19 @@ def generate_data(DATA_POINTS=5, key_signature='C', time_signature=(4,4), regist
 
 def main():
 
+    abs_path = os.path.dirname(os.path.abspath(__file__))
     # generate dataset
     generate_data()
 
 
     waveform_dataset = []
-    wav_files = os.listdir('datagenerator/wav_data')
+    wav_files = os.listdir(f'{abs_path}/wav_data')
     for file in wav_files:
-        waveform_dataset.append(ta.load(f'datagenerator/wav_data/{file}'))
+        waveform_dataset.append(ta.load(f'{abs_path}/wav_data/{file}'))
 
     wav = waveform_dataset[0]
 
-    to_play = f'datagenerator/wav_data/{wav_files[0]}'
+    to_play = f'{abs_path}/wav_data/{wav_files[0]}'
     # Extract data and sampling rate from file
     data, fs = sf.read(to_play, dtype='float32')
     sd.play(data, fs)
