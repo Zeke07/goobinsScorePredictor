@@ -38,3 +38,12 @@ Example of musicXML data encoding: https://www.musicxml.com/publications/makemus
 
 ## Future Plans:
 If all goes well and the model is good or bad (We don’t really expect for it to be 100% accurate), hopefully, we can create a simple website to allow people to upload WAV files and we can return the musicXML or sheet music to them. No details about this are set in stone, but I plan for our frontend to be React.js with an EC2 instance to store the mp3 file temporarily and generate the XML file with our model weights. 
+
+## External Packages (for environment)
+-LilyPond
+
+-FluidSynth
+
+-Some kind of soundfont (.sf2)
+
+-FFMPEG
