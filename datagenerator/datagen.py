@@ -66,6 +66,8 @@ def test():
 
 # load computer-generated midi, lilypond, pdf, and .wav forms into their respective directories
 def generate_data(DATA_POINTS=5, key_signature='C', time_signature=(4,4), registers=[4,5]):
+
+
     abs_path = os.path.dirname(os.path.abspath(__file__))
     # NOTES: We need to generate various attributes of the naive dataset randomly
     # We have the following constraints:
@@ -160,7 +162,15 @@ def main():
 
     for file in text_files:
         with open(f'{abs_path}/text_data/{file}') as content:
-            text_dataset.append(torch.tensor(content))
+            for line in content:
+                text_dataset.append(line)
+
+    m = -1
+    for input in text_dataset:
+        m = max(len(input), m)
+
+
+
 
 
 
