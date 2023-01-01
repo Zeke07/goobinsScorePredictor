@@ -1,6 +1,7 @@
-datagenerator/sheet_music/
-datagenerator/soundfonts/
-datagenerator/wav_data/
-datagenerator/text_data/
-datagenerator/midi_data/
+*/sheet_music/
+*/soundfonts/
+*/wav_data/
+*/text_data/
+*/midi_data/
+.DS_Store
 archives/

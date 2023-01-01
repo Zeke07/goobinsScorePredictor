@@ -21,7 +21,7 @@ import soundfile as sf
 
 # For the midi_data, should be in the repo.
 
-TESTING = False
+TESTING = True
 """
 This is a test suite, meant to test the functionality of the libraries.
 """
@@ -160,7 +160,15 @@ def main():
 
     for file in text_files:
         with open(f'{abs_path}/text_data/{file}') as content:
-            text_dataset.append(torch.tensor(content))
+            for line in content:
+                text_dataset.append(line)
+
+    m = -1
+    for input in text_dataset:
+        m = max(len(input), m)
+        print(input)
+
+    print(m)
 
 
 
@@ -173,7 +181,7 @@ def main():
 
 # fun little method from pytorch's audio io page
 def plot_waveform(waveform, sample_rate):
-
+    return
     waveform = waveform.numpy()
 
     num_channels, num_frames = waveform.shape
@@ -191,6 +199,7 @@ def plot_waveform(waveform, sample_rate):
     plt.show(block=False)
 
 def play_sound(file_path):
+    return
     # Extract data and sampling rate from file
     data, fs = sf.read(file_path, dtype='float32')
     sd.play(data, fs)
