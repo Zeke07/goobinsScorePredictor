@@ -6,9 +6,9 @@ from mingus.core import *
 from mingus.containers import *
 import random
 import os
+import torch
 import torchaudio as ta
 import matplotlib.pyplot as plt
-import torch
 import sounddevice as sd
 import soundfile as sf
 
@@ -21,6 +21,7 @@ import soundfile as sf
 
 # For the midi_data, should be in the repo.
 
+TESTING = False
 """
 This is a test suite, meant to test the functionality of the libraries.
 """
@@ -139,28 +140,36 @@ def generate_data(DATA_POINTS=5, key_signature='C', time_signature=(4,4), regist
 def main():
 
     abs_path = os.path.dirname(os.path.abspath(__file__))
+
     # generate dataset
-    generate_data()
+    if (TESTING):
+        generate_data()
 
 
     waveform_dataset = []
     wav_files = os.listdir(f'{abs_path}/wav_data')
+
+    # load() will return (tensor, sampling_rate)
+    # which we can possibly choose to ignore as
+    # everything is 44.1 KHz
     for file in wav_files:
-        waveform_dataset.append(ta.load(f'{abs_path}/wav_data/{file}'))
+        waveform_dataset.append(ta.load(f'{abs_path}/wav_data/{file}')[0])
 
-    wav = waveform_dataset[0]
+    text_dataset = []
+    text_files = os.listdir(f'{abs_path}/text_data')
 
-    to_play = f'{abs_path}/wav_data/{wav_files[0]}'
-    # Extract data and sampling rate from file
-    data, fs = sf.read(to_play, dtype='float32')
-    sd.play(data, fs)
-    status = sd.wait()  # Wait until file is done playing
-
+    for file in text_files:
+        with open(f'{abs_path}/text_data/{file}') as content:
+            text_dataset.append(torch.tensor(content))
 
 
 
 
 
+
+
+
+#HELPERS: plotting wav, audio playback for testing, etc
 
 # fun little method from pytorch's audio io page
 def plot_waveform(waveform, sample_rate):
@@ -181,6 +190,11 @@ def plot_waveform(waveform, sample_rate):
     figure.suptitle("waveform")
     plt.show(block=False)
 
+def play_sound(file_path):
+    # Extract data and sampling rate from file
+    data, fs = sf.read(file_path, dtype='float32')
+    sd.play(data, fs)
+    status = sd.wait()  # Wait until file is done playing
 
 
 
