@@ -137,7 +137,13 @@ def generate_data(DATA_POINTS=5, key_signature='C', time_signature=(4,4), regist
 
         file_serial_number += 1
 
+def vectorize_string(text, pad_to):
 
+    ascii_list = [ord(char) for char in text]
+    for _ in range(pad_to-len(text)):
+        ascii_list.append(0)
+
+    return torch.tensor(ascii_list, dtype=torch.uint8)
 
 def main():
 
@@ -157,22 +163,20 @@ def main():
     for file in wav_files:
         waveform_dataset.append(ta.load(f'{abs_path}/wav_data/{file}')[0])
 
-    text_dataset = []
+    text_strings = []
     text_files = os.listdir(f'{abs_path}/text_data')
 
+    pad_size = -1
     for file in text_files:
         with open(f'{abs_path}/text_data/{file}') as content:
             for line in content:
-                text_dataset.append(line)
+                pad_size = max(len(line), pad_size)
+                text_strings.append(line)
 
-    m = -1
-    for input in text_dataset:
-        m = max(len(input), m)
+    text_dataset = []
 
-
-
-
-
+    for input in text_strings:
+        text_dataset.append(vectorize_string(input, pad_size))
 
 
 
