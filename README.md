@@ -47,3 +47,11 @@ If all goes well and the model is good or bad (We don’t really expect for it t
 -Some kind of soundfont (.sf2)
 
 -FFMPEG
+
+-mingus.py
+
+-midi2audio.py
+
+-Pytorch
+
+-Numpy
