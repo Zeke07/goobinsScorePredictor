@@ -1,4 +1,4 @@
-
+import numpy as np
 from midi2audio import FluidSynth
 import mingus.extra.lilypond as lp
 from mingus.midi import midi_file_out
@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import sounddevice as sd
 import soundfile as sf
 
+
 # For installation, do pip install -r requirements.txt for python libraries
 # Before you run this, make folders named: midi_data, sheet_music, soundfonts, wav_data
 # You to need to install a fluidsynth and lilypond via brew (macOS) and if you're on linux, figure it out.
@@ -22,6 +23,7 @@ import soundfile as sf
 # For the midi_data, should be in the repo.
 
 TESTING = False
+PLOT = False
 """
 This is a test suite, meant to test the functionality of the libraries.
 """
@@ -160,8 +162,31 @@ def main():
     # load() will return (tensor, sampling_rate)
     # which we can possibly choose to ignore as
     # everything is 44.1 KHz
+
+    count = 0 # tracks how many times a plot is saved because this consumes runtime
     for file in wav_files:
-        waveform_dataset.append(ta.load(f'{abs_path}/wav_data/{file}')[0])
+        path = f'{abs_path}/wav_data/{file}'
+        wave, sample_rate = ta.load(path)
+        waveform_dataset.append(wave)
+        if (PLOT and count != 5):
+            plot_waveform(wave, sample_rate, file[0])
+            count+=1
+
+    # Print the tensor to a file, good lord it's huge!
+    '''
+    torch.set_printoptions(profile="full")
+   
+    np.savetxt('0.txt', waveform_dataset[0].numpy())
+    torch.save(waveform_dataset[0], '0.pt')
+
+
+    mp3_tensor = ta.load('0.mp3')
+    #print(mp3_tensor[0].shape)
+    #print(waveform_dataset[0].shape) # sample rate
+    print(waveform_dataset[0])
+    #np.savetxt('0-mp3.txt', mp3_tensor[0].numpy())
+    '''
+
 
     text_strings = []
     text_files = os.listdir(f'{abs_path}/text_data')
@@ -186,8 +211,8 @@ def main():
 #HELPERS: plotting wav, audio playback for testing, etc
 
 # fun little method from pytorch's audio io page
-def plot_waveform(waveform, sample_rate):
-
+def plot_waveform(waveform, sample_rate, serial_number):
+    abs_path = os.path.dirname(os.path.abspath(__file__))
     waveform = waveform.numpy()
 
     num_channels, num_frames = waveform.shape
@@ -202,7 +227,9 @@ def plot_waveform(waveform, sample_rate):
         if num_channels > 1:
             axes[c].set_ylabel(f"Channel {c+1}")
     figure.suptitle("waveform")
-    plt.show(block=False)
+    plt.savefig(f'{abs_path}/plots/{serial_number}.pdf', format='pdf')
+
+
 
 def play_sound(file_path):
     # Extract data and sampling rate from file
