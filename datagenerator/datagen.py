@@ -162,48 +162,69 @@ def main():
     # load() will return (tensor, sampling_rate)
     # which we can possibly choose to ignore as
     # everything is 44.1 KHz
+    Debug = False
+    if (Debug):
+        count = 0 # tracks how many times a plot is saved because this consumes runtime
+        for file in wav_files:
+            path = f'{abs_path}/wav_data/{file}'
+            wave, sample_rate = ta.load(path)
+            waveform_dataset.append(wave)
+            if (PLOT and count != 5):
+                plot_waveform(wave, sample_rate, file[0])
+                count+=1
 
-    count = 0 # tracks how many times a plot is saved because this consumes runtime
-    for file in wav_files:
-        path = f'{abs_path}/wav_data/{file}'
-        wave, sample_rate = ta.load(path)
-        waveform_dataset.append(wave)
-        if (PLOT and count != 5):
-            plot_waveform(wave, sample_rate, file[0])
-            count+=1
+            # Print the tensor to a file, good lord it's huge!
+            '''
+            torch.set_printoptions(profile="full")
 
-    # Print the tensor to a file, good lord it's huge!
-    '''
+            np.savetxt('0.txt', waveform_dataset[0].numpy())
+            torch.save(waveform_dataset[0], '0.pt')
+            mp3_tensor = ta.load('0.mp3')
+            #print(mp3_tensor[0].shape)
+            #print(waveform_dataset[0].shape) # sample rate
+            print(waveform_dataset[0])
+            #np.savetxt('0-mp3.txt', mp3_tensor[0].numpy())
+            '''
+        text_strings = []
+        text_files = os.listdir(f'{abs_path}/text_data')
+
+        pad_size = -1
+        for file in text_files:
+            with open(f'{abs_path}/text_data/{file}') as content:
+                for line in content:
+                    pad_size = max(len(line), pad_size)
+                    text_strings.append(line)
+
+        text_dataset = []
+
+        for input in text_strings:
+            text_dataset.append(vectorize_string(input, pad_size))
+
+        analyze_waveform()
+
+# hard-coded tester method for seeing the waveform of a specific note sequence
+def analyze_waveform():
+    curr_track = Track()
+    curr_track.add_bar(Bar(meter=(1,128)))
+    curr_track[0].place_notes(Note('G', 4), 128)
+    midi_file_out.write_Track('test.mid', curr_track, bpm=80)
+
+    sf = './soundfonts/YDP-GrandPiano-20160804.sf2'
+
+    # FluidSynth instance for generating .wav from
+    # the mingus MIDI file
+    fs = FluidSynth(sf)
+
+    fs.midi_to_audio('test.mid', 'test.wav')
+    test_tensor = ta.load('test.wav')
+    plot_waveform(test_tensor[0], test_tensor[1], 'test')
     torch.set_printoptions(profile="full")
-   
-    np.savetxt('0.txt', waveform_dataset[0].numpy())
-    torch.save(waveform_dataset[0], '0.pt')
 
-
-    mp3_tensor = ta.load('0.mp3')
-    #print(mp3_tensor[0].shape)
-    #print(waveform_dataset[0].shape) # sample rate
-    print(waveform_dataset[0])
-    #np.savetxt('0-mp3.txt', mp3_tensor[0].numpy())
-    '''
-
-
-    text_strings = []
-    text_files = os.listdir(f'{abs_path}/text_data')
-
-    pad_size = -1
-    for file in text_files:
-        with open(f'{abs_path}/text_data/{file}') as content:
-            for line in content:
-                pad_size = max(len(line), pad_size)
-                text_strings.append(line)
-
-    text_dataset = []
-
-    for input in text_strings:
-        text_dataset.append(vectorize_string(input, pad_size))
-
-
+    np.savetxt('test.txt', test_tensor[0].numpy())
+    lp_string = lp.from_Track(curr_track)
+    abs_path = os.path.dirname(os.path.abspath(__file__))
+    lp.to_pdf(lp_string, f'{abs_path}/sheet_music/test.pdf')
+    print(test_tensor[0].shape)
 
 
 
