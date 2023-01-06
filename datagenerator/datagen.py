@@ -11,7 +11,7 @@ import torchaudio as ta
 import matplotlib.pyplot as plt
 import sounddevice as sd
 import soundfile as sf
-
+from scipy.fft import rfft, rfftfreq
 
 # For installation, do pip install -r requirements.txt for python libraries
 # Before you run this, make folders named: midi_data, sheet_music, soundfonts, wav_data
@@ -173,18 +173,21 @@ def main():
                 plot_waveform(wave, sample_rate, file[0])
                 count+=1
 
-            # Print the tensor to a file, good lord it's huge!
-            '''
-            torch.set_printoptions(profile="full")
+        test_point = waveform_dataset[0]
+        plot_fft(test_point)
 
-            np.savetxt('0.txt', waveform_dataset[0].numpy())
-            torch.save(waveform_dataset[0], '0.pt')
-            mp3_tensor = ta.load('0.mp3')
-            #print(mp3_tensor[0].shape)
-            #print(waveform_dataset[0].shape) # sample rate
-            print(waveform_dataset[0])
-            #np.savetxt('0-mp3.txt', mp3_tensor[0].numpy())
-            '''
+        # Print the tensor to a file, good lord it's huge!
+        '''
+        torch.set_printoptions(profile="full")
+
+        np.savetxt('0.txt', waveform_dataset[0].numpy())
+        torch.save(waveform_dataset[0], '0.pt')
+        mp3_tensor = ta.load('0.mp3')
+        #print(mp3_tensor[0].shape)
+        #print(waveform_dataset[0].shape) # sample rate
+        print(waveform_dataset[0])
+        #np.savetxt('0-mp3.txt', mp3_tensor[0].numpy())
+        '''
         text_strings = []
         text_files = os.listdir(f'{abs_path}/text_data')
 
@@ -201,6 +204,18 @@ def main():
             text_dataset.append(vectorize_string(input, pad_size))
 
         analyze_waveform()
+
+def plot_fft(wave_tensor, sample_rate=44100):
+    wave_tensor = wave_tensor.numpy()
+    N = wave_tensor.shape
+    samples = N[1]
+
+    yf = rfft(wave_tensor[0]) #plot just one of the channels
+    xf = rfftfreq(samples, 1 / sample_rate)
+
+    plt.plot(xf, np.abs(yf))
+    plt.show()
+
 
 # hard-coded tester method for seeing the waveform of a specific note sequence
 def analyze_waveform():
@@ -240,14 +255,21 @@ def plot_waveform(waveform, sample_rate, serial_number):
     time_axis = torch.arange(0, num_frames) / sample_rate
 
     figure, axes = plt.subplots(num_channels, 1)
+
     if num_channels == 1:
         axes = [axes]
     for c in range(num_channels):
-        axes[c].plot(time_axis, waveform[c], linewidth=1)
+        axes[c].plot(time_axis, waveform[c], linewidth=1) # was 1
         axes[c].grid(True)
+        for label in (axes[c].get_xticklabels() + axes[c].get_yticklabels()):
+            label.set_fontsize(300)
         if num_channels > 1:
-            axes[c].set_ylabel(f"Channel {c+1}")
-    figure.suptitle("waveform")
+            axes[c].set_ylabel(f"Channel {c+1}", fontsize = 500)
+
+    figure.suptitle("Waveform",fontsize = 500)
+    figure.set_figwidth(500)
+    figure.set_figheight(500)
+
     plt.savefig(f'{abs_path}/plots/{serial_number}.pdf', format='pdf')
 
 
