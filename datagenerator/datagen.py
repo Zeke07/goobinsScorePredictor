@@ -1,3 +1,4 @@
+import mingus.containers
 import numpy as np
 from midi2audio import FluidSynth
 import mingus.extra.lilypond as lp
@@ -66,7 +67,7 @@ def test():
 
 
 
-# load computer-generated midi, lilypond, pdf, and .wav forms into their respective directories
+# load computer-generated (randomly) midi, lilypond, pdf, and .wav forms into their respective directories
 def generate_data(DATA_POINTS=5, key_signature='C', time_signature=(4,4), registers=[4,5]):
 
 
@@ -151,19 +152,18 @@ def main():
 
     abs_path = os.path.dirname(os.path.abspath(__file__))
 
-    # generate dataset
+    # generate dataset if needed
     if (TESTING):
         generate_data()
 
 
-    waveform_dataset = []
-    wav_files = os.listdir(f'{abs_path}/wav_data')
+    # ta.load(filename) will return (tensor, sampling_rate)
+    DATASET = False
 
-    # load() will return (tensor, sampling_rate)
-    # which we can possibly choose to ignore as
-    # everything is 44.1 KHz
-    Debug = False
-    if (Debug):
+    # Contains the code for loading dataset to tensors (REQUIRES CHANGES)
+    if (DATASET):
+        waveform_dataset = []
+        wav_files = os.listdir(f'{abs_path}/wav_data')
         count = 0 # tracks how many times a plot is saved because this consumes runtime
         for file in wav_files:
             path = f'{abs_path}/wav_data/{file}'
@@ -173,21 +173,6 @@ def main():
                 plot_waveform(wave, sample_rate, file[0])
                 count+=1
 
-        test_point = waveform_dataset[0]
-        plot_fft(test_point)
-
-        # Print the tensor to a file, good lord it's huge!
-        '''
-        torch.set_printoptions(profile="full")
-
-        np.savetxt('0.txt', waveform_dataset[0].numpy())
-        torch.save(waveform_dataset[0], '0.pt')
-        mp3_tensor = ta.load('0.mp3')
-        #print(mp3_tensor[0].shape)
-        #print(waveform_dataset[0].shape) # sample rate
-        print(waveform_dataset[0])
-        #np.savetxt('0-mp3.txt', mp3_tensor[0].numpy())
-        '''
         text_strings = []
         text_files = os.listdir(f'{abs_path}/text_data')
 
@@ -203,51 +188,96 @@ def main():
         for input in text_strings:
             text_dataset.append(vectorize_string(input, pad_size))
 
-        analyze_waveform()
+    # **THE ONLY CODE THAT RUNS RIGHT NOW**
+    test_waveform()
 
-def plot_fft(wave_tensor, sample_rate=44100):
-    wave_tensor = wave_tensor.numpy()
-    N = wave_tensor.shape
-    samples = N[1]
 
-    yf = rfft(wave_tensor[0]) #plot just one of the channels
+
+
+
+#HELPERS: plotting wav, audio playback for testing, analysis, etc
+
+# Check specified directories for this project
+# if unsure, run this method before testing any of the methods in this SRC file
+def check_dirs():
+    abs_path = os.path.dirname(os.path.abspath(__file__))
+    FILE_PATHS = [f'{abs_path}/midi_data', f'{abs_path}/plots', f'{abs_path}/sheet_music', f'{abs_path}/text_data',
+                  f'{abs_path}/wav_data', f'{abs_path}/test_sample']
+    for f in FILE_PATHS:
+        if (not os.path.exists(f)):
+            os.makedirs(f)
+            print(f'Created the following directory with path: {f}')
+
+
+# return the argmax(frequency) at a specific time-slice of the wav samples
+def argmax_fftfreq(wave_slice : np.array, sample_rate=44100):
+
+    samples = len(wave_slice)
+    yf = rfft(wave_slice)
     xf = rfftfreq(samples, 1 / sample_rate)
 
-    plt.plot(xf, np.abs(yf))
-    plt.show()
+    max_idx = np.argmax(np.abs(yf))
+    return xf[max_idx]
 
-
-# hard-coded tester method for seeing the waveform of a specific note sequence
-def analyze_waveform():
-    curr_track = Track()
-    curr_track.add_bar(Bar(meter=(1,128)))
-    curr_track[0].place_notes(Note('G', 4), 128)
-    midi_file_out.write_Track('test.mid', curr_track, bpm=80)
+# create a test sample in all file formats
+# indicate a custom track and the tempo
+# added to the 'test_sample' directory with specified filename (including a plot of the waveform)
+def mk_test_sample(track: mingus.containers.Track, filename: str, bpm: int):
+    abs_path = os.path.dirname(os.path.abspath(__file__))
+    midi_file_out.write_Track(f'{abs_path}/test_sample/{filename}.mid', track, bpm=bpm)
 
     sf = './soundfonts/YDP-GrandPiano-20160804.sf2'
 
     # FluidSynth instance for generating .wav from
     # the mingus MIDI file
     fs = FluidSynth(sf)
+    fs.midi_to_audio(f'{abs_path}/test_sample/{filename}.mid',f'{abs_path}/test_sample/{filename}.wav')
+    lp_string = lp.from_Track(track)
+    lp.to_pdf(lp_string, f'{abs_path}/test_sample/{filename}.pdf')
 
-    fs.midi_to_audio('test.mid', 'test.wav')
-    test_tensor = ta.load('test.wav')
-    plot_waveform(test_tensor[0], test_tensor[1], 'test')
-    torch.set_printoptions(profile="full")
-
-    np.savetxt('test.txt', test_tensor[0].numpy())
-    lp_string = lp.from_Track(curr_track)
-    abs_path = os.path.dirname(os.path.abspath(__file__))
-    lp.to_pdf(lp_string, f'{abs_path}/sheet_music/test.pdf')
-    print(test_tensor[0].shape)
+    test_tensor = ta.load(f'{abs_path}/test_sample/{filename}.wav')
+    plot_waveform(test_tensor[0], test_tensor[1], filename)
 
 
 
+# list argmax(frequences) at discrete time-steps in a wav file representation
+# specify a tuple from torchaudio.load(filename) in the form (tensor, sample_rate)
+def list_frequencies(torch_load: tuple, time_step: float):
+    sample_rate = torch_load[1]
 
-#HELPERS: plotting wav, audio playback for testing, etc
+    audio_duration = float(torch_load[0].shape[1] / sample_rate)
+    i = 0.0
 
-# fun little method from pytorch's audio io page
-def plot_waveform(waveform, sample_rate, serial_number):
+    #  remember to use just a single channel for now as they are both identical for our purposes
+    wav_array = torch_load[0][0].numpy()
+    frequencies = []
+    while i <= audio_duration:
+        slice = wav_array[int(sample_rate * i): int(sample_rate * (i + time_step))]
+        frequencies.append(argmax_fftfreq(slice, sample_rate))
+        i += time_step
+
+    return frequencies
+
+# hard-coded tester method for analyzing the waveform of
+# some custom music track
+def test_waveform():
+    curr_track = Track()
+    curr_track.add_bar(Bar(meter=(2,4)))
+    curr_track[0].place_notes(Note('G', 4), 4)
+    curr_track[0].place_notes(Note('C', 4), 4)
+
+    mk_test_sample(curr_track, 'testing', bpm=80)
+
+    frequencies = list_frequencies(ta.load('test_sample/testing.wav'), time_step = .25)
+    print(frequencies)
+
+
+# fun little method from pytorch's audio i/o page
+# for plotting the waveform for each channel of an audio clip
+# x-axis: time (indicated by the number of audio samples and the sample rate)
+# y-axis: amplitude
+# modified to enlarge the plot substantially
+def plot_waveform(waveform, sample_rate, filename):
     abs_path = os.path.dirname(os.path.abspath(__file__))
     waveform = waveform.numpy()
 
@@ -258,22 +288,27 @@ def plot_waveform(waveform, sample_rate, serial_number):
 
     if num_channels == 1:
         axes = [axes]
+
+    # iterate on the figure for each channel (default is stereo for us, so there are only 2 channels)
     for c in range(num_channels):
-        axes[c].plot(time_axis, waveform[c], linewidth=1) # was 1
+        axes[c].plot(time_axis, waveform[c], linewidth=1)
         axes[c].grid(True)
+
+        # increasing the font of each axis label/value
         for label in (axes[c].get_xticklabels() + axes[c].get_yticklabels()):
             label.set_fontsize(300)
         if num_channels > 1:
             axes[c].set_ylabel(f"Channel {c+1}", fontsize = 500)
 
-    figure.suptitle("Waveform",fontsize = 500)
+    figure.suptitle("Waveform",fontsize=500)
     figure.set_figwidth(500)
     figure.set_figheight(500)
 
-    plt.savefig(f'{abs_path}/plots/{serial_number}.pdf', format='pdf')
+    # save the figure as a pdf
+    plt.savefig(f'{abs_path}/plots/{filename}.pdf', format='pdf')
 
 
-
+# playback for a .wav file
 def play_sound(file_path):
     # Extract data and sampling rate from file
     data, fs = sf.read(file_path, dtype='float32')

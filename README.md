@@ -55,3 +55,9 @@ If all goes well and the model is good or bad (We don’t really expect for it t
 -Pytorch
 
 -Numpy
+
+-Scipy
+
+-Matplotlib (py)
+
+-Sounddevice (py)
